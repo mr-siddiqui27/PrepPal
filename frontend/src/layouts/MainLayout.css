@@ -1,0 +1,10 @@
+/* ── Main Layout ────────────────────────────────────────────── */
+.main-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.main-layout__content {
+  flex: 1;
+}
