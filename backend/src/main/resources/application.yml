@@ -1,0 +1,49 @@
+spring:
+  application:
+    name: preppal-backend
+
+  # ── MongoDB ────────────────────────────────────────────────
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017}
+      database: ${MONGODB_DATABASE:preppal_dev}
+      auto-index-creation: false
+
+# ── Server ──────────────────────────────────────────────────
+server:
+  port: 8080
+  error:
+    include-message: never
+    include-exception: false
+    include-stacktrace: never
+    include-binding-errors: never
+
+# ── Actuator ────────────────────────────────────────────────
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
+  endpoint:
+    health:
+      show-details: never
+  health:
+    mongo:
+      enabled: true
+    defaults:
+      enabled: true
+
+# ── JWT ─────────────────────────────────────────────────────
+# JWT_SECRET must be a Base64-encoded secret of at least 256 bits.
+# JWT_EXPIRATION_MS is the token lifetime in milliseconds.
+# Both values are read from environment variables — never hardcoded.
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+
+# ── Logging ─────────────────────────────────────────────────
+logging:
+  level:
+    root: INFO
+    com.preppal: DEBUG

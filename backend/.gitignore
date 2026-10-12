@@ -1,0 +1,10 @@
+# Maven build output
+target/
+
+# Environment files with real credentials — NEVER commit these
+.env
+
+# IDE
+.idea/
+*.iml
+.vscode/
