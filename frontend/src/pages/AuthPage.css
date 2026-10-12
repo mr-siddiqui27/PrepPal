@@ -108,3 +108,39 @@
 .auth-switch a:hover {
   color: var(--color-primary-800);
 }
+
+.auth-alert {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--space-4);
+  line-height: 1.4;
+  animation: fadeIn 0.3s ease both;
+}
+
+.auth-alert--error {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.auth-field-error {
+  font-size: var(--font-size-xs);
+  color: var(--color-error);
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+.auth-field input.input-error {
+  border-color: var(--color-error);
+}
+
+.auth-field input:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
