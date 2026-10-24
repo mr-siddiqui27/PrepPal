@@ -1,10 +1,42 @@
-/* ── Main Layout ────────────────────────────────────────────── */
-.main-layout {
+/* ── Main Layout Shell with Side Navigation ─────────────────── */
+.app-shell {
   display: flex;
-  flex-direction: column;
-  min-height: 100dvh;
+  min-height: 100vh;
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+  overflow-x: hidden;
+  transition: background-color var(--transition-normal), color var(--transition-normal);
 }
 
-.main-layout__content {
+.app-main-viewport {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.app-page-content {
+  flex: 1;
+}
+
+.auth-layout {
+  min-height: 100vh;
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+}
+
+.landing-layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+  overflow-x: hidden;
+}
+
+.landing-layout-main {
+  flex: 1;
+  width: 100%;
 }

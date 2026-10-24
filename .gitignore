@@ -1,27 +1,28 @@
-# ── Node / Frontend ──────────────────────────────────────────
+# Frontend
 node_modules/
 frontend/dist/
 frontend/.vite/
+frontend/dist-ssr/
 
-# ── Java / Backend ────────────────────────────────────────────
+# Backend
 backend/target/
-backend/.mvn/
 *.class
 *.jar
 *.war
 
-# ── IDE & OS ──────────────────────────────────────────────────
+# IDE and OS
 .idea/
 *.iml
 .vscode/
 .DS_Store
 Thumbs.db
 
-# ── Env / Secrets ─────────────────────────────────────────────
+# Environment variables and secrets
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
+!.env.*.example
 
-# ── Logs ──────────────────────────────────────────────────────
+# Logs
 *.log
 npm-debug.log*

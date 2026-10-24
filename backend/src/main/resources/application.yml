@@ -39,7 +39,7 @@ management:
 # Both values are read from environment variables — never hardcoded.
 app:
   jwt:
-    secret: ${JWT_SECRET}
+    secret: ${JWT_SECRET:dGVzdC1kZXZlbG9wbWVudC1qd3Qtc2VjcmV0LWtleS1taW4tMzItYnl0ZXM=}
     expiration-ms: ${JWT_EXPIRATION_MS:86400000}
 
 # ── Logging ─────────────────────────────────────────────────

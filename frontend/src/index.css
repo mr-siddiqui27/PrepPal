@@ -2,10 +2,11 @@
    PrepPal – Global Design System
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Inter:wght@400;500;600;700&display=swap');
 
 /* ── CSS Custom Properties ─────────────────────────────────── */
-:root {
+:root,
+[data-theme="light"] {
   /* Brand palette */
   --color-primary-50:  #eef2ff;
   --color-primary-100: #e0e7ff;
@@ -22,14 +23,28 @@
   --color-accent:       #06b6d4;
   --color-accent-light: #cffafe;
 
-  /* Neutrals */
-  --color-bg:           #f8fafc;
-  --color-surface:      #ffffff;
-  --color-surface-2:    #f1f5f9;
-  --color-border:       #e2e8f0;
-  --color-text-primary: #0f172a;
+  /* Neutrals (Light / White theme) */
+  --color-bg:             #f8fafc;
+  --color-surface:        #ffffff;
+  --color-surface-2:      #f1f5f9;
+  --color-surface-3:      #e2e8f0;
+  --color-border:         #e2e8f0;
+  --color-border-subtle:  #edf2f7;
+  --color-text-primary:   #0f172a;
   --color-text-secondary: #475569;
-  --color-text-muted:   #94a3b8;
+  --color-text-muted:     #94a3b8;
+
+  /* Card & Sheet Tokens */
+  --color-card-bg:        #ffffff;
+  --color-card-border:    #e2e8f0;
+  --color-row-bg:         #ffffff;
+  --color-row-hover:      #f8fafc;
+  --color-row-border:     #e2e8f0;
+  --color-input-bg:       #ffffff;
+  --color-input-border:   #cbd5e1;
+  --color-modal-bg:       #ffffff;
+  --color-modal-border:   #e2e8f0;
+  --shadow-sheet:         0 4px 20px -2px rgba(0, 0, 0, 0.08);
 
   /* Semantic */
   --color-success: #10b981;
@@ -37,7 +52,7 @@
   --color-error:   #ef4444;
 
   /* Typography */
-  --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
   --font-size-xs:   0.75rem;
   --font-size-sm:   0.875rem;
   --font-size-base: 1rem;
@@ -87,6 +102,38 @@
   --z-navbar: 100;
   --z-modal:  200;
   --z-toast:  300;
+}
+
+/* ── Dark Theme (TakeUForward Charcoal Palette) ──────────────── */
+[data-theme="dark"] {
+  --color-bg:             #0b0c10;
+  --color-surface:        #12141c;
+  --color-surface-2:      #181b26;
+  --color-surface-3:      #1e2230;
+  --color-border:         #232736;
+  --color-border-subtle:  #191c28;
+  --color-text-primary:   #f8fafc;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted:     #64748b;
+
+  --color-card-bg:        #12141c;
+  --color-card-border:    #1f2330;
+  --color-row-bg:         #14161f;
+  --color-row-hover:      #1a1e2b;
+  --color-row-border:     #1d212d;
+  --color-input-bg:       #141722;
+  --color-input-border:   #252b3d;
+  --color-modal-bg:       #141620;
+  --color-modal-border:   #252b3d;
+  --shadow-sheet:         0 4px 24px -2px rgba(0, 0, 0, 0.6);
+
+  --color-primary-50:  #1e1b4b;
+  --color-primary-100: #2e1065;
+  --color-primary-200: #3730a3;
+  --shadow-sm:  0 1px 3px 0 rgba(0, 0, 0, 0.4);
+  --shadow-md:  0 4px 10px -1px rgba(0, 0, 0, 0.5);
+  --shadow-lg:  0 10px 25px -3px rgba(0, 0, 0, 0.6);
+  --shadow-xl:  0 20px 35px -5px rgba(0, 0, 0, 0.7);
 }
 
 /* ── Reset & Base ───────────────────────────────────────────── */
@@ -351,3 +398,48 @@ ul, ol {
     padding-block: var(--space-12);
   }
 }
+
+/* ── Global Theme Adaptations ───────────────────────────────── */
+input, select, textarea {
+  font-family: inherit;
+  color: var(--color-text-primary);
+  background-color: var(--color-input-bg);
+  border: 1px solid var(--color-input-border);
+  border-radius: var(--radius-md);
+  transition: border-color var(--transition-fast), background-color var(--transition-fast);
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--color-primary-500);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+}
+
+[data-theme="dark"] .card {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+[data-theme="dark"] .card:hover {
+  border-color: var(--color-primary-400);
+  box-shadow: var(--shadow-lg);
+}
+
+[data-theme="dark"] .btn-ghost {
+  color: var(--color-text-secondary);
+}
+
+[data-theme="dark"] .btn-ghost:hover {
+  background: var(--color-surface-2);
+  color: var(--color-text-primary);
+}
+
+[data-theme="dark"] .btn-outline {
+  color: #818cf8;
+  border-color: #6366f1;
+}
+
+[data-theme="dark"] .btn-outline:hover {
+  background: rgba(99, 102, 241, 0.15);
+}
+
