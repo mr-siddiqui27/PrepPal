@@ -6,6 +6,7 @@ import SignupPage from './pages/SignupPage';
 import DashboardPage from './pages/DashboardPage';
 import ProfilePage from './pages/ProfilePage';
 import GoalsPage from './pages/GoalsPage';
+import SchedulePage from './pages/SchedulePage';
 
 export default function App() {
   return (
@@ -19,6 +20,7 @@ export default function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/goals" element={<GoalsPage />} />
+          <Route path="/schedule" element={<SchedulePage />} />
         </Route>
       </Routes>
     </BrowserRouter>
