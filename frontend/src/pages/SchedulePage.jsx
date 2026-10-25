@@ -10,15 +10,40 @@ import {
 import { getGoals } from '../services/goalService';
 import './SchedulePage.css';
 
-/* ── Utility helpers ─────────────────────────────────────────── */
+/* ── Utility helpers (pure local time, zero UTC-shift bugs) ── */
+
+function parseISODate(date) {
+  if (!date) return new Date();
+  if (date instanceof Date) {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  }
+  const str = String(date).split('T')[0];
+  const parts = str.split('-');
+  if (parts.length === 3) {
+    const y = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10) - 1;
+    const d = parseInt(parts[2], 10);
+    return new Date(y, m, d);
+  }
+  return new Date(date);
+}
 
 function toISODate(date) {
-  return date.toISOString().slice(0, 10);
+  if (!date) return '';
+  if (typeof date === 'string') {
+    const match = date.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (match) return match[1];
+    date = parseISODate(date);
+  }
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 function getWeekStart(date) {
-  const d = new Date(date);
-  const day = d.getDay(); // 0 = Sunday
+  const d = parseISODate(date);
+  const day = d.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
   const diff = day === 0 ? -6 : 1 - day; // Monday as first day
   d.setDate(d.getDate() + diff);
   d.setHours(0, 0, 0, 0);
@@ -26,10 +51,9 @@ function getWeekStart(date) {
 }
 
 function getWeekDays(weekStart) {
+  const start = parseISODate(weekStart);
   return Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(weekStart);
-    d.setDate(d.getDate() + i);
-    return d;
+    return new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
   });
 }
 
@@ -43,12 +67,12 @@ function formatTime(timeStr) {
 }
 
 function formatWeekRange(weekStart) {
-  const weekEnd = new Date(weekStart);
-  weekEnd.setDate(weekEnd.getDate() + 6);
+  const start = parseISODate(weekStart);
+  const end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 6);
   const opts = { month: 'short', day: 'numeric' };
-  const startStr = weekStart.toLocaleDateString('en-US', opts);
-  const endStr = weekEnd.toLocaleDateString('en-US', {
-    month: weekStart.getMonth() === weekEnd.getMonth() ? undefined : 'short',
+  const startStr = start.toLocaleDateString('en-US', opts);
+  const endStr = end.toLocaleDateString('en-US', {
+    month: start.getMonth() === end.getMonth() ? undefined : 'short',
     day: 'numeric',
     year: 'numeric',
   });
@@ -101,7 +125,7 @@ export default function SchedulePage() {
   /* ── View state ─────────────────────────────────────────────── */
   const [viewMode, setViewMode] = useState('week'); // 'week' | 'day'
   const [weekStart, setWeekStart] = useState(() => getWeekStart(new Date()));
-  const [selectedDay, setSelectedDay] = useState(new Date());
+  const [selectedDay, setSelectedDay] = useState(() => parseISODate(new Date()));
   const weekDays = getWeekDays(weekStart);
 
   /* ── Data state ─────────────────────────────────────────────── */
@@ -116,6 +140,7 @@ export default function SchedulePage() {
   const [form, setForm] = useState({ ...defaultForm });
   const [formError, setFormError] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   /* ── Status menu ─────────────────────────────────────────────── */
   const [statusMenuOpen, setStatusMenuOpen] = useState(null); // activity id
@@ -126,8 +151,9 @@ export default function SchedulePage() {
     setLoading(true);
     setError(null);
     try {
-      const start = toISODate(weekDays[0]);
-      const end = toISODate(weekDays[6]);
+      const currentDays = getWeekDays(weekStart);
+      const start = toISODate(currentDays[0]);
+      const end = toISODate(currentDays[6]);
       const data = await getActivitiesForRange(start, end);
       setActivities(Array.isArray(data) ? data : []);
     } catch (err) {
@@ -135,7 +161,7 @@ export default function SchedulePage() {
     } finally {
       setLoading(false);
     }
-  }, [weekStart]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [weekStart]);
 
   useEffect(() => {
     fetchActivities();
@@ -162,32 +188,83 @@ export default function SchedulePage() {
   /* ── Week navigation ─────────────────────────────────────────── */
   const goToPrevWeek = () => {
     setWeekStart(prev => {
-      const d = new Date(prev);
+      const d = parseISODate(prev);
       d.setDate(d.getDate() - 7);
-      return d;
+      return getWeekStart(d);
     });
   };
 
   const goToNextWeek = () => {
     setWeekStart(prev => {
-      const d = new Date(prev);
+      const d = parseISODate(prev);
       d.setDate(d.getDate() + 7);
-      return d;
+      return getWeekStart(d);
     });
   };
 
   const goToThisWeek = () => {
-    setWeekStart(getWeekStart(new Date()));
-    setSelectedDay(new Date());
-    setViewMode('week');
+    const now = new Date();
+    setWeekStart(getWeekStart(now));
+    setSelectedDay(parseISODate(now));
+  };
+
+  /* ── Day navigation ──────────────────────────────────────────── */
+  const goToPrevDay = () => {
+    const d = parseISODate(selectedDay);
+    d.setDate(d.getDate() - 1);
+    setSelectedDay(d);
+    setWeekStart(getWeekStart(d));
+  };
+
+  const goToNextDay = () => {
+    const d = parseISODate(selectedDay);
+    d.setDate(d.getDate() + 1);
+    setSelectedDay(d);
+    setWeekStart(getWeekStart(d));
+  };
+
+  const goToToday = () => {
+    const now = new Date();
+    setSelectedDay(parseISODate(now));
+    setWeekStart(getWeekStart(now));
+  };
+
+  /* ── View mode switcher ──────────────────────────────────────── */
+  const handleViewModeToggle = (mode) => {
+    setViewMode(mode);
+    if (mode === 'day') {
+      const curStart = toISODate(weekDays[0]);
+      const curEnd = toISODate(weekDays[6]);
+      const selStr = toISODate(selectedDay);
+      if (selStr < curStart || selStr > curEnd) {
+        const todayStr = toISODate(new Date());
+        if (todayStr >= curStart && todayStr <= curEnd) {
+          setSelectedDay(parseISODate(new Date()));
+        } else {
+          setSelectedDay(parseISODate(weekDays[0]));
+        }
+      }
+    }
   };
 
   /* ── Open modal ──────────────────────────────────────────────── */
   const openCreateModal = (date = null) => {
     setEditingActivity(null);
+    let targetDate = date;
+    if (!targetDate) {
+      if (viewMode === 'day') {
+        targetDate = selectedDay;
+      } else {
+        const today = new Date();
+        const startStr = toISODate(weekDays[0]);
+        const endStr = toISODate(weekDays[6]);
+        const todayStr = toISODate(today);
+        targetDate = (todayStr >= startStr && todayStr <= endStr) ? today : weekDays[0];
+      }
+    }
     setForm({
       ...defaultForm,
-      scheduledDate: date ? toISODate(date) : toISODate(new Date()),
+      scheduledDate: toISODate(targetDate),
     });
     setFormError(null);
     setModalOpen(true);
@@ -274,7 +351,17 @@ export default function SchedulePage() {
         await createActivity(payload);
       }
       setModalOpen(false);
-      await fetchActivities();
+
+      // Make sure the view centers on the activity's date
+      const activityDate = parseISODate(payload.scheduledDate);
+      const targetWeek = getWeekStart(activityDate);
+      setSelectedDay(activityDate);
+
+      if (toISODate(targetWeek) !== toISODate(weekStart)) {
+        setWeekStart(targetWeek);
+      } else {
+        await fetchActivities();
+      }
     } catch (err) {
       setFormError(err.message || 'Failed to save activity.');
     } finally {
@@ -295,14 +382,21 @@ export default function SchedulePage() {
     }
   };
 
-  /* ── Delete ──────────────────────────────────────────────────── */
+  /* ── Delete activity ─────────────────────────────────────────── */
   const handleDelete = async (activityId) => {
-    if (!window.confirm('Delete this activity?')) return;
+    if (!window.confirm('Are you sure you want to delete this activity?')) return;
+    setDeleting(true);
     try {
       await deleteActivity(activityId);
       setActivities(prev => prev.filter(a => a.id !== activityId));
+      if (modalOpen && editingActivity?.id === activityId) {
+        setModalOpen(false);
+        setEditingActivity(null);
+      }
     } catch (err) {
       setError(err.message || 'Failed to delete activity.');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -354,8 +448,8 @@ export default function SchedulePage() {
 
         <div className="schedule-toolbar">
           <div className="schedule-view-toggle">
-            <button className={`schedule-view-btn ${viewMode === 'week' ? 'active' : ''}`} onClick={() => setViewMode('week')}>Week</button>
-            <button className={`schedule-view-btn ${viewMode === 'day' ? 'active' : ''}`} onClick={() => setViewMode('day')}>Day</button>
+            <button className={`schedule-view-btn ${viewMode === 'week' ? 'active' : ''}`} onClick={() => handleViewModeToggle('week')}>Week</button>
+            <button className={`schedule-view-btn ${viewMode === 'day' ? 'active' : ''}`} onClick={() => handleViewModeToggle('day')}>Day</button>
           </div>
           <button className="schedule-add-btn" onClick={() => openCreateModal()}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -425,7 +519,7 @@ export default function SchedulePage() {
                 <div className="schedule-day-column" key={dateStr}>
                   <div
                     className={`schedule-day-header ${isToday ? 'today' : ''}`}
-                    onClick={() => { setSelectedDay(day); setViewMode('day'); }}
+                    onClick={() => { setSelectedDay(parseISODate(day)); setViewMode('day'); }}
                     title={`View ${day.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}`}
                   >
                     <div className="schedule-day-name">{DAY_NAMES[i]}</div>
@@ -437,18 +531,47 @@ export default function SchedulePage() {
                       <div
                         key={activity.id}
                         className={`schedule-activity-card status-${activity.status} type-${activity.activityType}`}
-                        onClick={() => activity.activityType === 'PREPPAL' && activity.navigationPath
-                          ? handleActivityClick(activity)
-                          : openEditModal(activity)
-                        }
+                        onClick={() => openEditModal(activity)}
                         title={activity.title}
                       >
-                        <div className="schedule-activity-card-title">{activity.title}</div>
+                        <div className="schedule-activity-card-header">
+                          <div className="schedule-activity-card-title">{activity.title}</div>
+                          <button
+                            type="button"
+                            className="schedule-card-delete-btn"
+                            title="Delete activity"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(activity.id);
+                            }}
+                          >
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                              <polyline points="3 6 5 6 21 6"/>
+                              <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+                              <path d="M10 11v6M14 11v6"/>
+                            </svg>
+                          </button>
+                        </div>
                         {activity.startTime && (
                           <div className="schedule-activity-card-time">{formatTime(activity.startTime)}</div>
                         )}
-                        <div className="schedule-activity-card-type">
-                          {activity.activityType === 'PREPPAL' ? '⚡ PrepPal' : '● Personal'}
+                        <div className="schedule-activity-card-footer">
+                          <div className="schedule-activity-card-type">
+                            {activity.activityType === 'PREPPAL' ? '⚡ PrepPal' : '● Personal'}
+                          </div>
+                          {activity.activityType === 'PREPPAL' && activity.navigationPath && (
+                            <button
+                              type="button"
+                              className="schedule-card-link-btn"
+                              title="Open in PrepPal"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(activity.navigationPath);
+                              }}
+                            >
+                              ↗
+                            </button>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -474,12 +597,7 @@ export default function SchedulePage() {
         <div className="schedule-day-view">
           <div className="schedule-day-view-header">
             <div className="schedule-day-view-nav">
-              <button className="week-nav-arrow-btn" onClick={() => {
-                const d = new Date(selectedDay);
-                d.setDate(d.getDate() - 1);
-                setSelectedDay(d);
-                setWeekStart(getWeekStart(d));
-              }}>
+              <button className="week-nav-arrow-btn" onClick={goToPrevDay} title="Previous day">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
               </button>
               <div className="schedule-day-view-date">
@@ -488,14 +606,10 @@ export default function SchedulePage() {
                   <span style={{ marginLeft: '8px', fontSize: '0.7rem', background: 'var(--color-primary-100)', color: 'var(--color-primary-600)', padding: '2px 8px', borderRadius: '99px', fontWeight: 700 }}>TODAY</span>
                 )}
               </div>
-              <button className="week-nav-arrow-btn" onClick={() => {
-                const d = new Date(selectedDay);
-                d.setDate(d.getDate() + 1);
-                setSelectedDay(d);
-                setWeekStart(getWeekStart(d));
-              }}>
+              <button className="week-nav-arrow-btn" onClick={goToNextDay} title="Next day">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="9 18 15 12 9 6"/></svg>
               </button>
+              <button className="week-nav-today-btn" onClick={goToToday} style={{ marginLeft: '8px' }}>Today</button>
             </div>
             <button className="schedule-add-btn" onClick={() => openCreateModal(selectedDay)}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -844,10 +958,42 @@ export default function SchedulePage() {
             </div>
 
             <div className="schedule-modal-footer">
-              <button className="schedule-btn-secondary" onClick={() => setModalOpen(false)}>Cancel</button>
-              <button className="schedule-btn-primary" onClick={handleSave} disabled={saving}>
-                {saving ? 'Saving…' : editingActivity ? 'Save Changes' : 'Add Activity'}
-              </button>
+              {editingActivity && (
+                <button
+                  type="button"
+                  className="schedule-btn-danger"
+                  onClick={() => handleDelete(editingActivity.id)}
+                  disabled={saving || deleting}
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+                    <path d="M10 11v6M14 11v6"/>
+                    <path d="M9 6V4h6v2"/>
+                  </svg>
+                  {deleting ? 'Deleting…' : 'Delete'}
+                </button>
+              )}
+
+              <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                {form.activityType === 'PREPPAL' && form.navigationPath && (
+                  <button
+                    type="button"
+                    className="schedule-btn-secondary"
+                    style={{ color: 'var(--color-primary-600)', borderColor: 'var(--color-primary-300)' }}
+                    onClick={() => {
+                      setModalOpen(false);
+                      navigate(form.navigationPath);
+                    }}
+                  >
+                    Open in PrepPal ↗
+                  </button>
+                )}
+                <button type="button" className="schedule-btn-secondary" onClick={() => setModalOpen(false)}>Cancel</button>
+                <button type="button" className="schedule-btn-primary" onClick={handleSave} disabled={saving || deleting}>
+                  {saving ? 'Saving…' : editingActivity ? 'Save Changes' : 'Add Activity'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
