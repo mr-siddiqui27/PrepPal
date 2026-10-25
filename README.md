@@ -142,8 +142,10 @@ PrepPal/
 │       │   │   │   └── SecurityConfig.java       # SecurityFilterChain, CORS, PasswordEncoder
 │       │   │   ├── controller/
 │       │   │   │   ├── AuthController.java       # Registration & Login endpoints
+│       │   │   │   ├── GoalController.java       # Goals, Topics, Subtopics & Resources API
 │       │   │   │   ├── HealthController.java     # /api/v1/health probe endpoint
-│       │   │   │   └── ProfileController.java    # /api/v1/profile/me endpoints (GET, PUT)
+│       │   │   │   ├── ProfileController.java    # /api/v1/profile/me endpoints (GET, PUT)
+│       │   │   │   └── ScheduleController.java   # /api/v1/schedule planning & activity endpoints
 │       │   │   ├── dto/
 │       │   │   │   ├── ApiErrorResponse.java     # Unified client error response structure
 │       │   │   │   ├── AuthResponse.java         # Auth response with JWT and user fields
@@ -151,16 +153,22 @@ PrepPal/
 │       │   │   │   ├── LoginRequest.java         # Credentials validation DTO
 │       │   │   │   ├── ProfileResponse.java      # Student profile response DTO
 │       │   │   │   ├── ProfileUpdateRequest.java # Profile update request validation DTO
-│       │   │   │   └── RegisterRequest.java      # Registration input validation DTO
+│       │   │   │   ├── RegisterRequest.java      # Registration input validation DTO
+│       │   │   │   ├── ScheduleActivityRequest.java  # Schedule activity create/update validation DTO
+│       │   │   │   └── ScheduleActivityResponse.java # Schedule activity response DTO
 │       │   │   ├── exception/
 │       │   │   │   ├── EmailAlreadyExistsException.java # Exception mapping to HTTP 409
 │       │   │   │   ├── ResourceNotFoundException.java   # Exception mapping to HTTP 404
 │       │   │   │   └── GlobalExceptionHandler.java      # @RestControllerAdvice handler
 │       │   │   ├── model/
+│       │   │   │   ├── Goal.java                 # MongoDB @Document(collection = "goals")
 │       │   │   │   ├── Role.java                 # STUDENT, ADMIN enum
+│       │   │   │   ├── ScheduleActivity.java     # MongoDB @Document(collection = "schedule_activities")
 │       │   │   │   ├── StudentProfile.java       # MongoDB @Document(collection = "student_profiles")
 │       │   │   │   └── User.java                 # MongoDB @Document(collection = "users")
 │       │   │   ├── repository/
+│       │   │   │   ├── GoalRepository.java       # Goal MongoRepository
+│       │   │   │   ├── ScheduleRepository.java   # Schedule activity MongoRepository
 │       │   │   │   ├── StudentProfileRepository.java # Profile MongoRepository
 │       │   │   │   └── UserRepository.java       # User MongoRepository
 │       │   │   ├── security/
@@ -170,7 +178,9 @@ PrepPal/
 │       │   │   │   └── TokenService.java                # Token operations interface
 │       │   │   └── service/
 │       │   │       ├── AuthService.java          # Core user auth & registration logic
-│       │   │       └── ProfileService.java       # Student profile retrieval & upsert logic
+│       │   │       ├── GoalService.java          # Goal hierarchy & progress calculation logic
+│       │   │       ├── ProfileService.java       # Student profile retrieval & upsert logic
+│       │   │       └── ScheduleService.java      # Schedule activity CRUD & recurrence engine
 │       │   └── resources/
 │       │       └── application.yml               # Backend configuration
 │       └── test/
@@ -203,7 +213,8 @@ PrepPal/
         ├── components/
         │   ├── FeatureCard.jsx / .css # Reusable SaaS feature card
         │   ├── Footer.jsx / .css      # Application footer
-        │   └── Navbar.jsx / .css      # Navigation bar with auth state & mobile hamburger menu
+        │   ├── Navbar.jsx / .css      # Navigation bar with auth state & mobile hamburger menu
+        │   └── Sidebar.jsx / .css     # Main workspace sidebar with responsive layout & routes
         ├── layouts/
         │   └── MainLayout.jsx / .css  # Main layout shell (Navbar + Content Outlet + Footer)
         ├── pages/
@@ -213,11 +224,13 @@ PrepPal/
         │   ├── AuthPage.css           # Authentication pages styling & error alert styles
         │   ├── DashboardPage.jsx / .css # Authenticated dashboard with quick profile & goals links
         │   ├── GoalsPage.jsx / .css   # Goals & Topic Tracker with derived progress & subtopic toggles
-        │   └── ProfilePage.jsx / .css # Comprehensive Student Profile (view/edit/chips/alerts)
+        │   ├── ProfilePage.jsx / .css # Comprehensive Student Profile (view/edit/chips/alerts)
+        │   └── SchedulePage.jsx / .css# Interactive Schedule planner (Week/Day views, activity modals, PrepPal direct linking)
         └── services/
             ├── authService.js         # Fetch client, JWT storage, and session management
             ├── goalService.js         # Goal, Topic, and Subtopic CRUD & toggle API client
-            └── profileService.js      # Profile fetch and update API client
+            ├── profileService.js      # Profile fetch and update API client
+            └── scheduleService.js     # Schedule activity CRUD & status update client
 ```
 
 ---
@@ -240,6 +253,7 @@ PrepPal/
 | **Student Profile Management** | ✅ Implemented | Dedicated `student_profiles` collection, secure `GET/PUT /api/v1/profile/me`, responsive React page (`/profile`) with view/edit/chip tags/validation |
 | **Global 2-Theme Engine** | ✅ Implemented | Unified Dark (TakeUForward charcoal) and Light (White) themes across all sections with interactive Navbar toggle and `localStorage` persistence |
 | **Goal Management & Topic Tracker** | ✅ Implemented | Dedicated `goals` collection, full CRUD endpoints for Goals, Topics, Subtopics, TakeUForward Striver A2Z sheet layout replica, tree connector branch, compact 5-icon subtopic rows, 3-level notes & resources, and 39 automated tests passed |
+| **Schedule — Personal Planning & Execution** | ✅ Implemented | Dedicated `schedule_activities` collection, full CRUD endpoints (`/api/v1/schedule`), interactive calendar views (Week/Day), activity lifecycle (Scheduled, In Progress, Completed, Skipped), recurring tasks (Daily/Weekly), and direct navigation to PrepPal Goals/Topics/Subtopics |
 | **Roadmap Management** | ⏳ Planned | Next scheduled task |
 | **Learning Resources** | ⏳ Planned | Planned feature |
 | **Progress Tracking** | ⏳ Planned | Planned feature |
@@ -423,6 +437,16 @@ PrepPal implements a strict stateless token-based security model:
 - **Topic Resources:** `POST /api/v1/goals/{goalId}/topics/{topicId}/resources`, `PUT /.../{resourceId}`, `DELETE /.../{resourceId}`
 - **Subtopic Resources:** `POST /api/v1/goals/{goalId}/topics/{topicId}/subtopics/{subtopicId}/resources`, `PUT /.../{resourceId}`, `DELETE /.../{resourceId}`
 
+#### 11. Schedule & Activity Execution Endpoints
+- **Get Activities by Date Range:** `GET /api/v1/schedule?start=YYYY-MM-DD&end=YYYY-MM-DD` (`200 OK`)
+  - Expands recurring activities (DAILY, WEEKLY) across the specified query date range.
+- **Get Activity by ID:** `GET /api/v1/schedule/{id}` (`200 OK`)
+- **Create Activity:** `POST /api/v1/schedule` (`201 Created`)
+  - Supports fields: `title`, `date`, `startTime`, `endTime`, `category`, `description`, `recurrence`, `status`, `goalId`, `goalTitle`, `topicId`, `topicTitle`, `subtopicId`, `subtopicTitle`.
+- **Update Activity:** `PUT /api/v1/schedule/{id}` (`200 OK`)
+- **Update Activity Status:** `PATCH /api/v1/schedule/{id}/status?status={SCHEDULED|IN_PROGRESS|COMPLETED|SKIPPED}` (`200 OK`)
+- **Delete Activity:** `DELETE /api/v1/schedule/{id}` (`204 No Content`)
+
 ---
 
 ## 🗄️ Database & Data Models
@@ -482,6 +506,39 @@ public class StudentProfile {
     private List<String> careerInterests;
     private List<String> targetCompanies;
     private List<String> preferredTechnologies;
+    
+    private Instant createdAt;
+    private Instant updatedAt;
+}
+```
+
+#### `ScheduleActivity` Entity (`schedule_activities` collection)
+Defined in [`com.preppal.model.ScheduleActivity`](file:///e:/Projects/PrepPal/PrepPal/backend/src/main/java/com/preppal/model/ScheduleActivity.java):
+
+```java
+@Document(collection = "schedule_activities")
+public class ScheduleActivity {
+    @Id
+    private String id;               // Auto-generated MongoDB ObjectId
+    @Indexed
+    private String userId;           // References users._id (authenticated owner)
+    private String title;            // Activity title
+    private String description;      // Optional markdown / text notes
+    @Indexed
+    private LocalDate date;          // Activity date (YYYY-MM-DD)
+    private LocalTime startTime;     // Start time (HH:mm)
+    private LocalTime endTime;       // End time (HH:mm)
+    private String category;         // DSA, SYSTEM_DESIGN, PROJECT, STUDY, MOCK_INTERVIEW, etc.
+    private String status;           // SCHEDULED, IN_PROGRESS, COMPLETED, SKIPPED
+    private String recurrence;       // NONE, DAILY, WEEKLY
+    
+    // Direct PrepPal execution links
+    private String goalId;
+    private String goalTitle;
+    private String topicId;
+    private String topicTitle;
+    private String subtopicId;
+    private String subtopicTitle;
     
     private Instant createdAt;
     private Instant updatedAt;

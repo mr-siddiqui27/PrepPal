@@ -52,16 +52,17 @@ Students preparing for software engineering and technical roles face several sys
 1. **Authentication & Account Security** (Implemented)
 2. **Student Profile** (Implemented — Endpoints & Frontend UI verified)
 3. **Goal Management** (Implemented — Endpoints & Frontend UI verified)
-4. **Roadmap Management** (Next scheduled task)
-5. **Learning Resource Management** (Planned)
-6. **Progress Tracking & Analytics** (Planned)
-7. **Comprehensive Dashboard** (Minimal placeholder implemented; full analytics planned)
-8. **AI-Assisted Roadmap & Gap Analysis** (Planned)
-9. **Interview Preparation & Topic Drills** (Planned)
-10. **AI Mock Interviews & Instant Feedback** (Planned)
-11. **Target-Company Preparation** (Planned)
-12. **Interview Experiences & Debriefs** (Planned)
-13. **Role-Based Admin Management** (Scaffolded; full admin controls planned)
+4. **Schedule — Personal Planning & Execution** (Implemented — Endpoints & Frontend UI verified)
+5. **Roadmap Management** (Next scheduled task)
+6. **Learning Resource Management** (Planned)
+7. **Progress Tracking & Analytics** (Planned)
+8. **Comprehensive Dashboard** (Minimal placeholder implemented; full analytics planned)
+9. **AI-Assisted Roadmap & Gap Analysis** (Planned)
+10. **Interview Preparation & Topic Drills** (Planned)
+11. **AI Mock Interviews & Instant Feedback** (Planned)
+12. **Target-Company Preparation** (Planned)
+13. **Interview Experiences & Debriefs** (Planned)
+14. **Role-Based Admin Management** (Scaffolded; full admin controls planned)
 
 ---
 
@@ -70,6 +71,7 @@ Students preparing for software engineering and technical roles face several sys
 - **Authentication & Security:** Secure signup and login issuing stateless JWTs. Passwords hashed using BCrypt. Duplicate accounts rejected. Unauthorized requests blocked.
 - **Student Profile:** Authenticated students view and update personal, academic, and technical background. Data persists across logins. Account credentials (passwords, roles) cannot be modified via profile.
 - **Goal Management:** Students create measurable goals with target deadlines and target companies, associating roadmaps and daily tasks with each goal.
+- **Schedule (Personal Planning & Execution):** Students organize their prep routine through interactive Week and Day views, set up recurring activities (Daily/Weekly), track task lifecycle (Scheduled, In Progress, Completed, Skipped), and seamlessly navigate directly to linked PrepPal Goals, Topics, or Subtopics.
 - **Roadmap Management:** Structured hierarchical trees or phase-based roadmaps (Phases → Modules → Topics → Tasks) with completion toggles and progress aggregation.
 - **Resource Management:** Bookmarking, tagging, and organizing external links, articles, documentation, and videos mapped directly to specific roadmap topics.
 - **Progress Tracking:** Real-time percentage completion, streak calculation, topic mastery indicators, and preparation velocity tracking.
@@ -280,6 +282,7 @@ The logical dependency chain governs engineering sequence:
 | Student Profile Module | **Completed** | Complete backend persistence (`student_profiles`), secure `GET/PUT /api/v1/profile/me`, frontend view/edit page, 10 automated tests passed |
 | Global 2-Theme Engine (Light & Dark) | **Completed** | App-wide Dark (Striver charcoal) & Light (White) themes with Navbar toggle, persistent state |
 | Goal Management & Topic Tracker | **Completed** | Complete backend CRUD (`goals`), TakeUForward Striver A2Z sheet replica, tree connector, compact 5-icon subtopic rows, 3-level notes & resources, 39 automated tests passed |
+| Schedule (Planning & Execution) | **Completed** | Dedicated `schedule_activities` collection, full CRUD endpoints (`/api/v1/schedule`), Week & Day interactive calendar views, activity status lifecycle, recurring tasks, PrepPal goal/topic linking |
 | Roadmap Management | **Pending** | Awaiting roadmap execution phase |
 | AI-Assisted Features | **Pending** | Requires Gemini API integration; deferred to Phase 6 |
 | Full-Context SpringBootTest with MongoDB | **Blocked / Incomplete** | Excluded Mongo autoconfiguration in test profile blocks full context test; needs mock bean or test container |
